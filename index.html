@@ -1,0 +1,557 @@
+<!DOCTYPE html>
+<html lang="en" style="--n: 18">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="referrer" content="no-referrer">
+<title>Rocket Gallery — Infinite Scroll</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Share+Tech+Mono&display=swap" rel="stylesheet">
+<style>
+@property --k {
+  syntax: '<number>';
+  initial-value: -1;
+  inherits: true
+}
+
+@property --ang {
+  syntax: '<angle>';
+  initial-value: 0deg;
+  inherits: false
+}
+
+* { margin: 0 }
+
+html {
+  scrollbar-width: none;
+  height: calc(var(--n)*100%)
+}
+
+body, header, main, section,
+article, figure { display: grid }
+
+body {
+  --dir: 0;
+  grid-template-rows: max-content 1fr max-content;
+  position: fixed;
+  width: 100%;
+  height: 100vh;
+  height: 100dvh;
+  color: #c8d8f0;
+  font: clamp(.625em, 3vmin, 1.5em)/ 1.25 'Orbitron', sans-serif;
+  animation: k 1s linear;
+  animation-timeline: scroll();
+  background: #000008;
+
+  &::before {
+    position: absolute;
+    inset: 0;
+    z-index: -1;
+    background:
+      radial-gradient(ellipse at 20% 50%, #0a0a2e 0%, transparent 60%),
+      radial-gradient(ellipse at 80% 20%, #050520 0%, transparent 50%),
+      #000008;
+    content: ''
+  }
+
+  &::after {
+    position: absolute;
+    inset: 0;
+    z-index: -1;
+    background-image:
+      radial-gradient(1px 1px at 10% 15%, #fff 100%, transparent),
+      radial-gradient(1px 1px at 25% 40%, #aac 100%, transparent),
+      radial-gradient(1px 1px at 40% 8%, #fff 100%, transparent),
+      radial-gradient(1.5px 1.5px at 55% 70%, #ddf 100%, transparent),
+      radial-gradient(1px 1px at 70% 25%, #fff 100%, transparent),
+      radial-gradient(1px 1px at 85% 55%, #cce 100%, transparent),
+      radial-gradient(1px 1px at 15% 80%, #eef 100%, transparent),
+      radial-gradient(1px 1px at 32% 60%, #fff 100%, transparent),
+      radial-gradient(1.5px 1.5px at 48% 90%, #aad 100%, transparent),
+      radial-gradient(1px 1px at 63% 45%, #fff 100%, transparent),
+      radial-gradient(1px 1px at 78% 75%, #cce 100%, transparent),
+      radial-gradient(1px 1px at 92% 10%, #fff 100%, transparent),
+      radial-gradient(1px 1px at 5% 35%, #dde 100%, transparent),
+      radial-gradient(1px 1px at 20% 95%, #fff 100%, transparent),
+      radial-gradient(1.5px 1.5px at 36% 22%, #aac 100%, transparent),
+      radial-gradient(1px 1px at 52% 50%, #fff 100%, transparent),
+      radial-gradient(1px 1px at 68% 88%, #eef 100%, transparent),
+      radial-gradient(1px 1px at 82% 33%, #fff 100%, transparent),
+      radial-gradient(1px 1px at 95% 65%, #ccd 100%, transparent),
+      radial-gradient(1px 1px at 8% 55%, #fff 100%, transparent);
+    content: '';
+    pointer-events: none;
+  }
+
+  @media (max-aspect-ratio: 2/ 3) { --dir: 1 }
+}
+
+@keyframes k { to { --k: 1 } }
+
+header {
+  place-content: center;
+  place-items: center;
+  padding: .6em .5em .4em;
+  text-align: center;
+  text-wrap: balance;
+  position: relative;
+  z-index: 10;
+  border-bottom: 1px solid #1a3a6a44;
+  background: linear-gradient(to bottom, #00001888, transparent);
+}
+
+header h1 {
+  font-size: clamp(.9em, 2.5vmin, 1.6em);
+  font-weight: 900;
+  letter-spacing: .15em;
+  text-transform: uppercase;
+  background: linear-gradient(135deg, #4fc3f7, #e3f2fd, #29b6f6, #fff);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  text-shadow: none;
+  margin-bottom: .15em;
+}
+
+header strong {
+  font-family: 'Share Tech Mono', monospace;
+  font-size: .65em;
+  color: #4a7fa8;
+  letter-spacing: .1em;
+  text-transform: uppercase;
+}
+
+em {
+  max-width: 32em;
+  font-style: normal;
+  font-family: 'Share Tech Mono', monospace;
+  font-size: .6em;
+  color: #2a5577;
+  letter-spacing: .05em;
+}
+
+main {
+  overflow: hidden;
+  perspective: 50em
+}
+
+section, article { transform-style: preserve-3d }
+
+section {
+  --r: calc(2 + var(--dir))/ 3;
+  --w: clamp(4em, min(50vh, 25vw), 18em);
+  --z: calc(var(--f, 1.25)*-.5*var(--w)/tan(.5turn/var(--n)));
+  place-self: center;
+  translate: 0 0 var(--z);
+  rotate: var(--dir) calc(1 - var(--dir)) 0 calc((var(--k) + .5)*-1turn);
+}
+
+article, header, figure, img, figcaption { grid-area: 1/ 1 }
+
+article {
+  --j: var(--i)/var(--n);
+  --dif-lin: calc(var(--j) - mod(var(--k) + 1, 1));
+  --abs-lin: abs(var(--dif-lin));
+  --dif-mid: calc(.5 - var(--abs-lin));
+  --abs-mid: abs(var(--dif-mid));
+  --dif-arc: calc(2*(.5 - var(--abs-mid)));
+  --lim: .35;
+  --sel: max(0, calc((var(--lim) - var(--dif-arc))/var(--lim)));
+  --out: calc(1 - var(--sel));
+  --hov: 0;
+  width: var(--w);
+  aspect-ratio: var(--r);
+  transform:
+    rotate3d(var(--dir), calc(1 - var(--dir)), 0, calc(var(--j)*1turn))
+    translatez(var(--z))
+    rotate(calc(var(--dir)*.5turn));
+
+  header { rotate: y calc((1 + var(--hov))*.5turn) }
+
+  &:hover, &:focus-within { --hov: round(var(--sel)) }
+
+  @supports not (scale: abs(-1)) {
+    --abs-lin: max(var(--dif-lin), -1*var(--dif-lin));
+    --abs-mid: max(var(--dif-mid), -1*var(--dif-mid))
+  }
+}
+
+article header, figure {
+  --ang: calc(-45deg + var(--hov)*180deg);
+  overflow: hidden;
+  position: relative;
+  border: solid 4px #0000;
+  border-radius: .4em;
+  backface-visibility: hidden;
+  box-shadow:
+    5px 5px 20px #000,
+    0 0 30px #001133aa,
+    inset 0 0 20px #00000066;
+  background:
+    var(--url) var(--pos, 50%)/ cover padding-box,
+    linear-gradient(#1a2a4a 0 0) padding-box,
+    repeating-conic-gradient(from var(--ang),
+        #0000 0% 15%,
+        color-mix(in srgb,
+          #29b6f6 calc(var(--sel)*100%), #0d1b2a) 20% 30%,
+        #0000 35% 50%)
+      border-box #050d1a;
+  background-blend-mode: multiply, normal, normal;
+  isolation: isolate;
+  pointer-events: none;
+  transition: .35s ease-out;
+  transition-property: rotate, --ang;
+
+  &::after {
+    position: absolute;
+    inset: 0;
+    opacity: var(--out);
+    background: #000820;
+    mix-blend-mode: color;
+    pointer-events: none;
+    content: ''
+  }
+}
+
+h2, em, img, a { pointer-events: auto }
+
+h2, em, figcaption {
+  opacity: round(up, var(--sel));
+  text-shadow: 1px 1px 3px #000c
+}
+
+article header h2 {
+  font-size: .95em;
+  font-weight: 700;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+  color: #e3f2fd;
+  padding: .4em .5em .1em;
+  align-self: start;
+}
+
+article header em {
+  font-family: 'Share Tech Mono', monospace;
+  font-size: .65em;
+  color: #4fc3f7;
+  letter-spacing: .05em;
+  align-self: end;
+  padding: 0 .5em .5em;
+  text-transform: uppercase;
+  max-width: none;
+}
+
+figure { rotate: y calc(var(--hov)*.5turn) }
+
+img {
+  width: 100%;
+  height: 100%;
+  aspect-ratio: var(--r);
+  object-fit: cover;
+  object-position: var(--pos, 50%)
+}
+
+figcaption {
+  align-self: end;
+  padding: .4em .5em;
+  background: #00000088;
+  color: #90caf9;
+  font: Max(.7rem, .7em)/ 1.3 'Share Tech Mono', monospace;
+  text-align: right;
+  backdrop-filter: blur(8px) brightness(1.2);
+  border-top: 1px solid #1a4a7a44;
+
+  a { color: #4fc3f7; text-decoration: none }
+  a:hover { color: #81d4fa }
+}
+
+footer {
+  height: 2em;
+  background: linear-gradient(to top, #00001888, transparent);
+}
+
+aside {
+  position: fixed;
+  bottom: 0;
+  padding: .5em;
+}
+
+.box-info-scrollani {
+  margin: .5em;
+  border-left: solid 5px #1565c0;
+  padding: .75em;
+  box-shadow: 2px 2px 5px #00000066;
+  background: #0d2137;
+  color: #90caf9;
+  font: 1em/ 1.25 'Share Tech Mono', monospace;
+
+  @supports (animation-timeline: scroll()) { display: none }
+}
+
+kbd {
+  padding: 2px;
+  background: #00000055;
+  font: 1.1em/ 1.2 'Share Tech Mono', monospace
+}
+</style>
+</head>
+<body>
+
+<svg width="0" height="0" aria-hidden="true" style="position:fixed">
+  <filter id="grain">
+    <feTurbulence type="fractalNoise" baseFrequency="7.13"/>
+    <feColorMatrix type="saturate" values="0"/>
+    <feComponentTransfer><feFuncA type="linear" slope=".025"/></feComponentTransfer>
+    <feBlend in2="SourceGraphic"/>
+  </filter>
+</svg>
+
+<header>
+  <h1>Rocket Launch Archive</h1>
+  <strong>scroll up &amp; down / use arrow keys</strong>
+  <em>scroll-driven 3D circular gallery</em>
+</header>
+
+<main class="scene">
+  <section class="assembly">
+
+    <!-- 0: Apollo 11 Saturn V liftoff -->
+    <article style="--i:0; --url:url(saturn-v.jpg); --pos:50% 30%">
+      <header>
+        <h2>Saturn V</h2>
+        <em>NASA · 1967–1973</em>
+      </header>
+      <figure>
+        <img src="saturn-v.jpg" alt="Apollo 11 Saturn V rocket lifting off from Kennedy Space Center">
+        <figcaption>Apollo 11 liftoff · <a href="https://commons.wikimedia.org/wiki/File:Apollo_11_Launch_-_GPN-2000-000630.jpg" target="_blank">NASA</a></figcaption>
+      </figure>
+    </article>
+
+    <!-- 1: Space Shuttle Discovery on pad under full moon -->
+    <article style="--i:1; --url:url(shuttle.jpg); --pos:50% 20%">
+      <header>
+        <h2>Space Shuttle</h2>
+        <em>NASA · 1981–2011</em>
+      </header>
+      <figure>
+        <img src="shuttle.jpg" alt="Space Shuttle Discovery on the launch pad beneath a full moon at night">
+        <figcaption>Discovery on pad · <a href="https://commons.wikimedia.org/wiki/File:Space_Shuttle_Discovery_under_a_full_moon,_03-11-09.jpg" target="_blank">NASA</a></figcaption>
+      </figure>
+    </article>
+
+    <!-- 2: Falcon 9 — Es'hail-2 mission -->
+    <article style="--i:2; --url:url(falcon-9.jpg); --pos:50% 40%">
+      <header>
+        <h2>Falcon 9</h2>
+        <em>SpaceX · 2010–Present</em>
+      </header>
+      <figure>
+        <img src="falcon-9.jpg" alt="Falcon 9 rocket launching on the Es'hail-2 mission">
+        <figcaption>Es'hail-2 mission · <a href="https://commons.wikimedia.org/wiki/File:Es%27hail-2_Mission_(cropped).jpg" target="_blank">SpaceX</a></figcaption>
+      </figure>
+    </article>
+
+    <!-- 3: Starship with moonset -->
+    <article style="--i:3; --url:url(starship.jpg); --pos:50% 30%">
+      <header>
+        <h2>Starship</h2>
+        <em>SpaceX · 2019–Present</em>
+      </header>
+      <figure>
+        <img src="starship.jpg" alt="SpaceX Starship stack at Starbase with the moon setting behind it">
+        <figcaption>Starship &amp; moonset · <a href="https://commons.wikimedia.org/wiki/File:Starship_%26_Moonset.jpg" target="_blank">SpaceX</a></figcaption>
+      </figure>
+    </article>
+
+    <!-- 4: Artemis I SLS pre-launch on pad 39B -->
+    <article style="--i:4; --url:url(artemis.jpg); --pos:50% 25%">
+      <header>
+        <h2>Artemis SLS</h2>
+        <em>NASA · 2022–Present</em>
+      </header>
+      <figure>
+        <img src="artemis.jpg" alt="Artemis I Space Launch System on launch pad 39B at Kennedy Space Center before launch">
+        <figcaption>Artemis I pre-launch · <a href="https://commons.wikimedia.org/wiki/File:Artemis_I_Prelaunch_(NHQ202209020005).jpg" target="_blank">NASA</a></figcaption>
+      </figure>
+    </article>
+
+    <!-- 5: Proton-M night launch with Blagovest satellite -->
+    <article style="--i:5; --url:url(proton-m.jpg); --pos:50% 35%">
+      <header>
+        <h2>Proton-M</h2>
+        <em>Roscosmos · 2001–2022</em>
+      </header>
+      <figure>
+        <img src="proton-m.jpg" alt="Proton-M rocket launching at night with Blagovest satellite, 2017">
+        <figcaption>Blagovest launch · <a href="https://commons.wikimedia.org/wiki/File:Night_start_of_Proton-M_rocket_with_Blagovest_satellite_17.08.2017.jpg" target="_blank">Roscosmos</a></figcaption>
+      </figure>
+    </article>
+
+    <!-- 6: Falcon Heavy launch -->
+    <article style="--i:6; --url:url(falcon-heavy.jpg); --pos:50% 20%">
+      <header>
+        <h2>Falcon Heavy</h2>
+        <em>SpaceX · 2018–Present</em>
+      </header>
+      <figure>
+        <img src="falcon-heavy.jpg" alt="Falcon Heavy triple-core rocket launching with all 27 engines firing">
+        <figcaption>Falcon Heavy launch · <a href="https://commons.wikimedia.org/wiki/File:Falcon-heavy-crop.jpg" target="_blank">SpaceX</a></figcaption>
+      </figure>
+    </article>
+
+    <!-- 7: Hunga Tonga eruption plume viewed from ISS -->
+    <article style="--i:7; --url:url(iss.jpg); --pos:50% 50%">
+      <header>
+        <h2>View from Orbit</h2>
+        <em>ISS · 1998–Present</em>
+      </header>
+      <figure>
+        <img src="iss.jpg" alt="Hunga Tonga volcanic eruption plume photographed from the International Space Station">
+        <figcaption>Hunga Tonga from ISS · <a href="https://commons.wikimedia.org/wiki/File:ISS-66_Atmospheric_plume_from_2022_Hunga_Tonga_eruption_-_edited.jpg" target="_blank">NASA</a></figcaption>
+      </figure>
+    </article>
+
+    <!-- 8: ICESat-2 Delta II launch smoke trail -->
+    <article style="--i:8; --url:url(delta-ii.jpg); --pos:50% 40%">
+      <header>
+        <h2>Delta II</h2>
+        <em>ULA · 1989–2018</em>
+      </header>
+      <figure>
+        <img src="delta-ii.jpg" alt="ICESat-2 Delta II launch smoke trail rising over the pad">
+        <figcaption>ICESat-2 · <a href="https://commons.wikimedia.org/wiki/File:Icesat-2_launch_smoke.jpg" target="_blank">NASA</a></figcaption>
+      </figure>
+    </article>
+
+    <!-- 9: Milky Way over Oeschinensee during Perseids -->
+    <article style="--i:9; --url:url(night-sky.jpg); --pos:50% 50%">
+      <header>
+        <h2>The Night Sky</h2>
+        <em>Milky Way · Perseids</em>
+      </header>
+      <figure>
+        <img src="night-sky.jpg" alt="Milky Way and Perseid meteors reflected in Oeschinensee lake, Switzerland">
+        <figcaption>Perseids over Oeschinensee · <a href="https://commons.wikimedia.org/wiki/File:036_Milky_Way_during_Perseids_seen_from_Oeschinensee_with_water_reflections_Photo_by_Giles_Laurent.jpg" target="_blank">Giles Laurent</a></figcaption>
+      </figure>
+    </article>
+
+    <!-- 10: Cat's Eye Nebula NGC 6543 — Hubble -->
+    <article style="--i:10; --url:url(nebula.jpg); --pos:50% 50%">
+      <header>
+        <h2>Deep Space</h2>
+        <em>Cat's Eye Nebula · NGC 6543</em>
+      </header>
+      <figure>
+        <img src="nebula.jpg" alt="Cat's Eye Nebula NGC 6543 imaged by the Hubble Space Telescope">
+        <figcaption>NGC 6543 · <a href="https://commons.wikimedia.org/wiki/File:NGC6543.jpg" target="_blank">NASA / ESA / Hubble</a></figcaption>
+      </figure>
+    </article>
+
+    <!-- 11: Space Shuttle Main Engine RS-25 test firing -->
+    <article style="--i:11; --url:url(engine.jpg); --pos:50% 50%">
+      <header>
+        <h2>RS-25 Engine</h2>
+        <em>NASA · SSME Test Fire</em>
+      </header>
+      <figure>
+        <img src="engine.jpg" alt="Space Shuttle Main Engine RS-25 test firing with brilliant white exhaust plume at Stennis">
+        <figcaption>RS-25 test fire · <a href="https://commons.wikimedia.org/wiki/File:Shuttle_Main_Engine_Test_Firing.jpg" target="_blank">NASA / Stennis</a></figcaption>
+      </figure>
+    </article>
+
+    <!-- 12: Long March 2D launching VRSS-1 -->
+    <article style="--i:12; --url:url(long-march.jpg); --pos:50% 30%">
+      <header>
+        <h2>Long March 2D</h2>
+        <em>CNSA · 1992–Present</em>
+      </header>
+      <figure>
+        <img src="long-march.jpg" alt="Long March 2D rocket launching VRSS-1 satellite, seen from afar with exhaust plume">
+        <figcaption>VRSS-1 mission · <a href="https://commons.wikimedia.org/wiki/File:Long_March_2D_launching_VRSS-1_afar.jpg" target="_blank">CNSA</a></figcaption>
+      </figure>
+    </article>
+
+    <!-- 13: Delta IV Heavy NROL-65 launch — fire on pad -->
+    <article style="--i:13; --url:url(delta-iv-heavy.jpg); --pos:50% 30%">
+      <header>
+        <h2>Delta IV Heavy</h2>
+        <em>ULA · 2004–2024</em>
+      </header>
+      <figure>
+        <img src="delta-iv-heavy.jpg" alt="Delta IV Heavy NROL-65 launch with characteristic hydrogen fire engulfing the base of the rocket">
+        <figcaption>NROL-65 launch · <a href="https://commons.wikimedia.org/wiki/File:Delta_IV_Heavy_NROL-65_2.jpg" target="_blank">USAF / ULA</a></figcaption>
+      </figure>
+    </article>
+
+    <!-- 14: Soyuz TMA-13 on pad at Baikonur -->
+    <article style="--i:14; --url:url(soyuz.jpg); --pos:50% 20%">
+      <header>
+        <h2>Soyuz</h2>
+        <em>Roscosmos · 1967–Present</em>
+      </header>
+      <figure>
+        <img src="soyuz.jpg" alt="Soyuz TMA-13 rocket on the launch pad at Baikonur Cosmodrome, Kazakhstan">
+        <figcaption>Soyuz TMA-13 on pad · <a href="https://commons.wikimedia.org/wiki/File:Soyuz_TMA-13_Edit.jpg" target="_blank">NASA</a></figcaption>
+      </figure>
+    </article>
+
+    <!-- 15: Ariane 5 launching James Webb Space Telescope -->
+    <article style="--i:15; --url:url(ariane-5.jpg); --pos:50% 25%">
+      <header>
+        <h2>Ariane 5</h2>
+        <em>ESA · JWST Launch · 2021</em>
+      </header>
+      <figure>
+        <img src="ariane-5.jpg" alt="Ariane 5 VA256 lifting off carrying the James Webb Space Telescope from Kourou, French Guiana">
+        <figcaption>JWST liftoff · <a href="https://commons.wikimedia.org/wiki/File:Ariane_5_VA256_liftoff_(cropped).jpg" target="_blank">ESA / NASA / CSA</a></figcaption>
+      </figure>
+    </article>
+
+    <!-- 16: New Shepard original vehicle on pad -->
+    <article style="--i:16; --url:url(new-shepard.jpg); --pos:50% 40%">
+      <header>
+        <h2>New Shepard</h2>
+        <em>Blue Origin · 2015–Present</em>
+      </header>
+      <figure>
+        <img src="new-shepard.jpg" alt="Blue Origin New Shepard rocket and capsule on the launch pad in West Texas">
+        <figcaption>New Shepard on pad · <a href="https://commons.wikimedia.org/wiki/File:NewShepard1.jpg" target="_blank">Blue Origin</a></figcaption>
+      </figure>
+    </article>
+
+    <!-- 17: H-IIA GPM payload fairing -->
+    <article style="--i:17; --url:url(h-iia.jpg); --pos:50% 35%">
+      <header>
+        <h2>H-IIA</h2>
+        <em>JAXA · GPM Mission · 2014</em>
+      </header>
+      <figure>
+        <img src="h-iia.jpg" alt="Payload fairing of the H-IIA rocket carrying the GPM Core Observatory satellite">
+        <figcaption>GPM mission fairing · <a href="https://commons.wikimedia.org/wiki/File:Payload_fairing_of_GPM%27s_H-IIA_rocket.jpg" target="_blank">JAXA / NASA</a></figcaption>
+      </figure>
+    </article>
+
+  </section>
+</main>
+
+<footer></footer>
+
+<aside>
+  <p class="box-info-scrollani">
+    Sorry, your browser does not appear to support scroll-driven animation.
+    As of early 2025, this is supported in Firefox if the
+    <kbd>layout.css.scroll-driven-animations.enabled</kbd> flag is set to true in
+    <kbd>about:config</kbd> and in Chromium browsers.
+  </p>
+</aside>
+
+<script>
+function f(k) {
+  if(Math.abs(k) > .5)
+    scrollTo(0, .5*(k - Math.sign(k) + 1)*(document.documentElement.offsetHeight - window.innerHeight))
+}
+f(-1);
+addEventListener('scroll', e => f(+getComputedStyle(document.body).getPropertyValue('--k')))
+</script>
+</body>
+</html>
