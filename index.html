@@ -293,6 +293,140 @@ kbd {
   background: #00000055;
   font: 1.1em/ 1.2 'Share Tech Mono', monospace
 }
+
+/* === MODAL === */
+.modal-backdrop {
+  display: none;
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  background: #000010cc;
+  backdrop-filter: blur(6px);
+  place-items: center;
+  padding: 1em;
+}
+
+.modal-backdrop.open {
+  display: grid;
+}
+
+.modal {
+  position: relative;
+  width: min(680px, 95vw);
+  max-height: 90vh;
+  overflow-y: auto;
+  scrollbar-width: thin;
+  scrollbar-color: #29b6f6 #0d1b2a;
+  border-radius: .6em;
+  border: 1px solid #1a4a7a88;
+  background: #040d1e;
+  box-shadow: 0 0 60px #001133, 0 0 120px #00112244;
+  animation: modal-in .3s cubic-bezier(.2, .8, .3, 1) forwards;
+}
+
+@keyframes modal-in {
+  from { opacity: 0; scale: .92; translate: 0 20px }
+  to   { opacity: 1; scale: 1;   translate: 0 0 }
+}
+
+.modal-img {
+  width: 100%;
+  height: 260px;
+  object-fit: cover;
+  object-position: var(--modal-pos, 50%);
+  display: block;
+  border-radius: .6em .6em 0 0;
+}
+
+.modal-body {
+  padding: 1.4em 1.6em 1.8em;
+}
+
+.modal-title {
+  font-size: 1.4em;
+  font-weight: 900;
+  letter-spacing: .12em;
+  text-transform: uppercase;
+  background: linear-gradient(135deg, #4fc3f7, #fff);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  margin-bottom: .15em;
+}
+
+.modal-subtitle {
+  font-family: 'Share Tech Mono', monospace;
+  font-size: .7em;
+  color: #4fc3f7;
+  letter-spacing: .1em;
+  text-transform: uppercase;
+  margin-bottom: 1.2em;
+}
+
+.modal-section-label {
+  font-family: 'Share Tech Mono', monospace;
+  font-size: .6em;
+  letter-spacing: .15em;
+  text-transform: uppercase;
+  color: #29b6f6;
+  border-bottom: 1px solid #1a4a7a66;
+  padding-bottom: .3em;
+  margin: 1em 0 .6em;
+}
+
+.modal-desc {
+  font-family: 'Share Tech Mono', monospace;
+  font-size: .68em;
+  color: #a0c4e8;
+  line-height: 1.7;
+  letter-spacing: .03em;
+}
+
+.modal-facts {
+  list-style: none;
+  padding: 0;
+  display: grid;
+  gap: .45em;
+}
+
+.modal-facts li {
+  font-family: 'Share Tech Mono', monospace;
+  font-size: .65em;
+  color: #a0c4e8;
+  line-height: 1.5;
+  padding-left: 1.2em;
+  position: relative;
+}
+
+.modal-facts li::before {
+  content: '▸';
+  position: absolute;
+  left: 0;
+  color: #29b6f6;
+}
+
+.modal-close {
+  position: absolute;
+  top: .7em;
+  right: .8em;
+  background: #00000088;
+  border: 1px solid #1a4a7a66;
+  border-radius: .3em;
+  color: #90caf9;
+  font: .65em 'Share Tech Mono', monospace;
+  letter-spacing: .1em;
+  padding: .3em .6em;
+  cursor: pointer;
+  transition: background .2s, color .2s;
+  z-index: 10;
+}
+
+.modal-close:hover {
+  background: #29b6f622;
+  color: #fff;
+}
+
+article { cursor: pointer }
 </style>
 </head>
 <body>
@@ -545,13 +679,325 @@ kbd {
   </p>
 </aside>
 
+<!-- Modal -->
+<div class="modal-backdrop" id="backdrop" role="dialog" aria-modal="true">
+  <div class="modal" id="modal">
+    <button class="modal-close" id="modal-close">✕ CLOSE</button>
+    <img class="modal-img" id="modal-img" src="" alt="">
+    <div class="modal-body">
+      <div class="modal-title" id="modal-title"></div>
+      <div class="modal-subtitle" id="modal-subtitle"></div>
+      <div class="modal-section-label">About</div>
+      <p class="modal-desc" id="modal-desc"></p>
+      <div class="modal-section-label">Fun Facts</div>
+      <ul class="modal-facts" id="modal-facts"></ul>
+    </div>
+  </div>
+</div>
+
 <script>
+// ── infinite scroll logic ──────────────────────────────────
 function f(k) {
   if(Math.abs(k) > .5)
     scrollTo(0, .5*(k - Math.sign(k) + 1)*(document.documentElement.offsetHeight - window.innerHeight))
 }
 f(-1);
 addEventListener('scroll', e => f(+getComputedStyle(document.body).getPropertyValue('--k')))
+
+// ── rocket data ────────────────────────────────────────────
+const rockets = {
+  0: {
+    title: 'Saturn V',
+    sub: 'NASA · 1967–1973',
+    img: 'saturn-v.jpg',
+    pos: '50% 30%',
+    desc: 'The Saturn V remains the most powerful rocket ever flown. Developed by NASA under the Apollo program, it stood 111 metres tall and could lift 130 tonnes to low Earth orbit. Designed by Wernher von Braun\'s team at Marshall Space Flight Center, it flew 13 successful missions and never lost a crew. Its thunderous first stage burned through 2,000 tonnes of fuel in just 2.5 minutes.',
+    facts: [
+      'Generated 34.5 million newtons of thrust at liftoff — equivalent to 85 Hoover Dams',
+      'Remains the only rocket to carry humans beyond low Earth orbit',
+      'The F-1 engines were so powerful that engineers had to invent new ways to stop them from tearing themselves apart',
+      'Each launch consumed more fuel than Charles Lindbergh used on his entire transatlantic flight... in under 3 minutes',
+      'The rocket was so loud at launch it melted concrete and could be heard 80 km away'
+    ]
+  },
+  1: {
+    title: 'Space Shuttle',
+    sub: 'NASA · 1981–2011',
+    img: 'shuttle.jpg',
+    pos: '50% 20%',
+    desc: 'The Space Shuttle was the world\'s first reusable spacecraft, flying 135 missions over 30 years. The system consisted of the orbiter, two solid rocket boosters, and an external tank. It carried the Hubble Space Telescope to orbit, built the International Space Station, and returned science from space. Despite two tragic losses — Challenger in 1986 and Columbia in 2003 — it transformed how humanity works in space.',
+    facts: [
+      'The orbiter\'s main engines ran at a temperature hotter than the surface of the Sun',
+      'The heat shield tiles could withstand 1,650°C but were so light you could hold one in your bare hand seconds after heating',
+      'Discovery, the most-flown orbiter, travelled over 238 million km across 39 missions',
+      'The shuttle\'s toilet cost $23 million to design and build',
+      'Re-entry caused the orbiter\'s skin to glow like a meteor — visible from the ground at night'
+    ]
+  },
+  2: {
+    title: 'Falcon 9',
+    sub: 'SpaceX · 2010–Present',
+    img: 'falcon-9.jpg',
+    pos: '50% 40%',
+    desc: 'Falcon 9 is the world\'s first orbital-class reusable rocket, fundamentally changing the economics of spaceflight. Developed by SpaceX, its first stage returns to land itself autonomously — either back at the launch site or on a drone ship at sea. A single booster has flown as many as 20 times. It has become the workhorse of global launch services, carrying satellites, astronauts to the ISS, and Starlink internet satellites.',
+    facts: [
+      'The landing legs deploy in under a second and are made of carbon fibre and aluminium honeycomb',
+      'Its Merlin engines use a "fuel-rich" mixture that actually runs RP-1 kerosene and liquid oxygen',
+      'One booster set a record by carrying 143 satellites to orbit on a single flight in January 2021',
+      'The drone ship landing platforms are named after ships in Iain M. Banks\' Culture novels',
+      'SpaceX manufactures about 80% of Falcon 9\'s components in-house, including the engines'
+    ]
+  },
+  3: {
+    title: 'Starship',
+    sub: 'SpaceX · 2019–Present',
+    img: 'starship.jpg',
+    pos: '50% 30%',
+    desc: 'Starship is SpaceX\'s fully reusable super-heavy launch vehicle, designed to carry humans to the Moon, Mars, and beyond. Standing 121 metres tall when stacked with its Super Heavy booster, it is the largest rocket ever built. Both stages are designed to be caught by mechanical arms on the launch tower rather than landing on legs. NASA has selected Starship as the Human Landing System for the Artemis Moon missions.',
+    facts: [
+      'Super Heavy\'s 33 Raptor engines produce more thrust than any rocket in history — surpassing even the Saturn V',
+      'The entire vehicle is made of stainless steel, a material SpaceX chose partly because it\'s cheap and easy to weld',
+      'Starship is designed to be refuelled in orbit, enabling missions to Mars with a single vehicle',
+      'The "chopstick" catch arms on the launch tower are nicknamed "Mechazilla"',
+      'A fully loaded Starship weighs about 5,000 tonnes — more than the Eiffel Tower'
+    ]
+  },
+  4: {
+    title: 'Artemis SLS',
+    sub: 'NASA · 2022–Present',
+    img: 'artemis.jpg',
+    pos: '50% 25%',
+    desc: 'The Space Launch System is NASA\'s most powerful rocket since Saturn V, built to return humans to the Moon under the Artemis program. It uses four RS-25 engines salvaged from the Space Shuttle program, alongside two enormous solid rocket boosters. Artemis I flew an uncrewed test mission around the Moon in 2022, paving the way for crewed lunar missions. The Block 1 configuration stands 98 metres tall.',
+    facts: [
+      'SLS reuses the same RS-25 engines that flew on the Space Shuttle — some have flown multiple times before',
+      'The solid rocket boosters burn a rubbery mixture that, once lit, cannot be turned off',
+      'It produces 8.8 million pounds of thrust at liftoff — 15% more than the Saturn V',
+      'The orange colour of the core stage comes from spray-on foam insulation, not paint',
+      'The Orion capsule on top can sustain a crew of four for up to 21 days in deep space'
+    ]
+  },
+  5: {
+    title: 'Proton-M',
+    sub: 'Roscosmos · 2001–2022',
+    img: 'proton-m.jpg',
+    pos: '50% 35%',
+    desc: 'The Proton-M was Russia\'s flagship heavy-lift rocket for over two decades, launching from Baikonur Cosmodrome in Kazakhstan. It carried everything from space station modules to commercial satellites. The Proton line traces its origins to the 1960s Cold War space race and the original design was intended as an intercontinental ballistic missile. The rocket was infamous for several high-profile failures, most memorably an upside-down satellite launch caused by sensors installed backwards.',
+    facts: [
+      'Its hypergolic propellant — unsymmetrical dimethylhydrazine — is so toxic that launch crews wear hazmat suits',
+      'A 2013 launch failure was traced to 12 angular velocity sensors being installed upside down',
+      'The rocket is so wide it cannot be transported fully assembled by rail, so it travels in sections',
+      'It launched the core modules of the International Space Station, including Zarya in 1998',
+      'Over its lifetime Proton flew more than 400 missions, making it one of the most-flown heavy rockets ever'
+    ]
+  },
+  6: {
+    title: 'Falcon Heavy',
+    sub: 'SpaceX · 2018–Present',
+    img: 'falcon-heavy.jpg',
+    pos: '50% 20%',
+    desc: 'Falcon Heavy is the world\'s most powerful operational rocket, consisting of three Falcon 9 cores strapped together with 27 Merlin engines at its base. Its debut flight in February 2018 carried Elon Musk\'s personal Tesla Roadster as a dummy payload, now orbiting the Sun. All three boosters are recoverable — the two side boosters land simultaneously at the launch site in a stunning synchronized landing, while the central core targets a drone ship.',
+    facts: [
+      'The simultaneous side-booster landings produce a sonic double-boom that rattles windows for kilometres',
+      'The Tesla Roadster dummy payload carried a spacesuit-clad mannequin named "Starman" and a copy of The Hitchhiker\'s Guide to the Galaxy',
+      'At full thrust it generates 22.8 million newtons — equivalent to eighteen 747 aircraft at full throttle',
+      'The 27 engines have to be carefully choreographed to avoid vibrations tearing the rocket apart',
+      'It can deliver 63.8 tonnes to low Earth orbit — more than any other operational rocket'
+    ]
+  },
+  7: {
+    title: 'View from Orbit',
+    sub: 'ISS · 1998–Present',
+    img: 'iss.jpg',
+    pos: '50% 50%',
+    desc: 'The International Space Station has been continuously inhabited since November 2000, making it humanity\'s longest-running off-world outpost. Orbiting at roughly 400 km altitude, it travels at 28,000 km/h and completes 16 orbits of Earth every day. This photograph, taken from the ISS, captures the enormous atmospheric plume from the January 2022 Hunga Tonga volcanic eruption — one of the most powerful explosions ever recorded on Earth.',
+    facts: [
+      'The ISS is the size of a football field and cost over $150 billion to build — the most expensive object ever constructed',
+      'Astronauts on the ISS see 16 sunrises and 16 sunsets every single day',
+      'The Hunga Tonga eruption created a pressure wave that circled Earth multiple times and was detected by weather stations worldwide',
+      'The ISS has been visited by 273 people from 20 different countries',
+      'Without regular re-boosts, atmospheric drag would cause the ISS to re-enter Earth\'s atmosphere within a year'
+    ]
+  },
+  8: {
+    title: 'Delta II',
+    sub: 'ULA · 1989–2018',
+    img: 'delta-ii.jpg',
+    pos: '50% 40%',
+    desc: 'The Delta II was one of the most reliable rockets in history, with a near-perfect record of 155 launches over 29 years. It carried an extraordinary portfolio of science missions including the Mars Exploration Rovers Spirit and Opportunity, the Kepler space telescope, the MESSENGER Mercury probe, and dozens of GPS satellites. Its final flight in September 2018 carried the ICESat-2 ice-monitoring satellite, closing out a legendary career.',
+    facts: [
+      'The Delta II achieved a 98.7% success rate across 155 launches — one of the best in the industry',
+      'It launched both the Spirit and Opportunity Mars rovers in the summer of 2003',
+      'The Kepler space telescope, launched on Delta II, discovered over 2,600 confirmed exoplanets',
+      'A Delta II booster exploded on the pad in 1997 and the debris narrowly missed spectators 1 km away',
+      'Its final launch in 2018 ended nearly three decades of continuous service'
+    ]
+  },
+  9: {
+    title: 'The Night Sky',
+    sub: 'Milky Way · Perseids',
+    img: 'night-sky.jpg',
+    pos: '50% 50%',
+    desc: 'The Perseid meteor shower occurs every August when Earth passes through the debris trail left by Comet Swift-Tuttle. At its peak, up to 100 meteors per hour streak across the sky. This photograph captures the Milky Way and Perseid meteors reflected in Switzerland\'s Oeschinensee lake. The streaks of light are not from comets themselves — they are tiny fragments, most no larger than a grain of sand, burning up in Earth\'s atmosphere at 60 km/s.',
+    facts: [
+      'The Perseid meteors hit Earth\'s atmosphere at 60 km/s — fast enough to circle the globe in under 11 minutes',
+      'Comet Swift-Tuttle, the source of Perseids, is 26 km wide — twice the size of the object that killed the dinosaurs',
+      'The Milky Way\'s central bulge contains a supermassive black hole called Sagittarius A* with a mass 4 million times that of the Sun',
+      'On the darkest nights, the Milky Way is bright enough to cast a faint shadow',
+      'The light from the galactic core you see tonight left its source 26,000 years ago'
+    ]
+  },
+  10: {
+    title: "Cat's Eye Nebula",
+    sub: 'NGC 6543 · 3,300 Light Years Away',
+    img: 'nebula.jpg',
+    pos: '50% 50%',
+    desc: "The Cat's Eye Nebula (NGC 6543) is a planetary nebula — the glowing shell of gas expelled by a dying star. Located 3,300 light years away in the constellation Draco, it was the first nebula to have its spectrum analysed, in 1864. The intricate structure is caused by a complex series of eruptions from the dying central star over thousands of years. Hubble's detailed images revealed eleven concentric rings of gas, like tree rings recording the star's final centuries.",
+    facts: [
+      "It was the first nebula whose spectrum was studied — revealing it was made of gas, not unresolved stars",
+      'The central star has a surface temperature of 80,000°C — more than 13 times hotter than our Sun',
+      "The nebula is expanding at about 16 km/s — it will be unrecognisable in just 1,000 years",
+      "The eleven concentric rings suggest the star erupted roughly every 1,500 years like clockwork",
+      "Despite its name, the Cat's Eye was coined by Lord Rosse in 1844 using a hand-drawn sketch, not a photograph"
+    ]
+  },
+  11: {
+    title: 'RS-25 Engine',
+    sub: 'NASA · Space Shuttle Main Engine',
+    img: 'engine.jpg',
+    pos: '50% 50%',
+    desc: 'The RS-25, also known as the Space Shuttle Main Engine, is considered one of the greatest engineering achievements in rocket history. It burns liquid hydrogen and liquid oxygen at extreme efficiency, and was designed to be reused up to 55 times. Three of these engines powered every Space Shuttle flight from 1981 to 2011. They have since been refurbished for use on the Space Launch System (SLS), where four RS-25s power the core stage.',
+    facts: [
+      'The combustion chamber runs at 3,300°C — hotter than the surface of the Sun',
+      'It achieves a specific impulse of 453 seconds in vacuum — among the highest of any rocket engine using non-exotic propellants',
+      'The turbopumps spin at 37,000 RPM and move enough liquid hydrogen to empty a family swimming pool in under 25 seconds',
+      'Each engine was individually tested for 40,000 seconds before flight — equivalent to 40 full Shuttle launches',
+      'The SLS versions of RS-25 are "expendable" — meaning they are destroyed on each flight, unlike the reusable Shuttle versions'
+    ]
+  },
+  12: {
+    title: 'Long March 2D',
+    sub: 'CNSA · 1992–Present',
+    img: 'long-march.jpg',
+    pos: '50% 30%',
+    desc: 'The Long March 2D is a two-stage Chinese orbital launch vehicle that has become one of the most reliable workhorses of the Long March family. Operated by the China Academy of Launch Vehicle Technology, it launches primarily from the Jiuquan and Taiyuan space centres. It has carried a wide range of Earth observation, remote sensing, and scientific satellites. China\'s Long March family as a whole has conducted over 500 launches, cementing China as a major spacefaring nation.',
+    facts: [
+      'The Long March name (长征) references Mao Zedong\'s famous 1934 military retreat across China',
+      'China\'s Long March rockets have now conducted more launches than any other country\'s rocket family',
+      'The propellant used — UDMH and nitrogen tetroxide — is hypergolic, meaning it ignites on contact with no spark needed',
+      'China\'s launch sites are so far inland that spent rocket stages sometimes land in villages, a recurring problem',
+      'The Long March 2D has achieved over 60 consecutive successful flights'
+    ]
+  },
+  13: {
+    title: 'Delta IV Heavy',
+    sub: 'ULA · 2004–2024',
+    img: 'delta-iv-heavy.jpg',
+    pos: '50% 30%',
+    desc: 'The Delta IV Heavy was the most powerful American rocket before Falcon Heavy, consisting of three Common Booster Cores strapped side by side. At ignition, the rocket is briefly engulfed in a ball of fire as excess hydrogen burns off — a dramatic signature unique to this vehicle. It primarily launched classified US national security payloads and flew NASA\'s Orion spacecraft on its first test flight in 2014. Its final launch took place in April 2024.',
+    facts: [
+      'The hydrogen fireball at ignition scorches the rocket\'s paint, giving it a distinctive charred appearance on liftoff',
+      'Its RS-68 engine is the most powerful hydrogen-fuelled engine ever flown — producing 3.37 million newtons of thrust',
+      'It carried the first uncrewed test flight of the Orion capsule in 2014, sending it 5,800 km above Earth',
+      'At $400 million per launch, it was one of the most expensive rockets ever operated',
+      'The three cores burn through over 600,000 kg of propellant in the first few minutes of flight'
+    ]
+  },
+  14: {
+    title: 'Soyuz',
+    sub: 'Roscosmos · 1967–Present',
+    img: 'soyuz.jpg',
+    pos: '50% 20%',
+    desc: 'The Soyuz rocket is the most-flown launch vehicle in history, with over 1,900 launches since 1966. Its basic design has remained remarkably consistent for nearly 60 years, a testament to the elegance of its original engineering. For much of the ISS era, Soyuz was the only rocket capable of carrying humans to the station. The capsule\'s design was largely the work of Sergei Korolev, the secretive Soviet rocket genius whose identity was classified for decades.',
+    facts: [
+      'With over 1,900 launches, Soyuz has flown more times than any other rocket in history',
+      'After the Shuttle retired in 2011, Soyuz was the only way for humans to reach the ISS for nine years',
+      'The Soyuz capsule lands on solid ground, using retrorockets in the final metres to cushion impact — unlike water-landing American capsules',
+      'Its designer, Sergei Korolev, was known only as "The Chief Designer" — his identity was a state secret to protect him from assassination',
+      'Soyuz rockets are assembled horizontally then raised to vertical at the pad — the opposite of most Western rockets'
+    ]
+  },
+  15: {
+    title: 'Ariane 5',
+    sub: 'ESA · 1996–2023',
+    img: 'ariane-5.jpg',
+    pos: '50% 25%',
+    desc: 'Ariane 5 was Europe\'s premier heavy-lift rocket for nearly three decades, launching from the Guiana Space Centre in Kourou, French Guiana — a site chosen for its proximity to the equator. Its most famous payload was the James Webb Space Telescope in December 2021, which it delivered so precisely that JWST has enough fuel for potentially double its planned 10-year mission. Ariane 5 retired in 2023 after 117 launches, succeeded by Ariane 6.',
+    facts: [
+      'The JWST launch was so accurate that mission controllers estimated the telescope gained enough spare fuel for an extra 10+ years of operation',
+      'Kourou in French Guiana is chosen because it\'s near the equator — rockets get a free speed boost of 460 m/s from Earth\'s rotation',
+      'Its first launch in 1996 ended in an explosion when the guidance software — reused from Ariane 4 — divided a 64-bit number by a 16-bit integer',
+      'The 1996 software bug is one of the most expensive programming errors in history, destroying a $370 million rocket',
+      'Ariane 5 successfully launched all four Jules Verne, Johannes Kepler, Edoardo Amaldi, and Albert Einstein ATV cargo ships to the ISS'
+    ]
+  },
+  16: {
+    title: 'New Shepard',
+    sub: 'Blue Origin · 2015–Present',
+    img: 'new-shepard.jpg',
+    pos: '50% 40%',
+    desc: 'New Shepard is Blue Origin\'s suborbital rocket designed for space tourism and microgravity research, named after Alan Shepard — the first American in space. The vehicle consists of a reusable booster and a capsule that separates above the Kármán line (100 km altitude), the internationally recognised boundary of space. Both the booster and capsule land separately and are fully reusable. Jeff Bezos flew on the first crewed mission in July 2021.',
+    facts: [
+      'Named after Alan Shepard, the first American in space, who flew a suborbital trajectory nearly identical to New Shepard\'s in 1961',
+      'The capsule has the largest windows ever flown in space — each one taller than an astronaut',
+      'Jeff Bezos brought a small feather from the Wright Brothers\' first flight on his inaugural crewed mission',
+      'The booster landing is so precise it touches down within centimetres of its target every time',
+      'Passengers experience about 3 minutes of weightlessness above the Kármán line before returning to Earth'
+    ]
+  },
+  17: {
+    title: 'H-IIA',
+    sub: 'JAXA · 2001–2024',
+    img: 'h-iia.jpg',
+    pos: '50% 35%',
+    desc: 'Japan\'s H-IIA rocket was the country\'s primary launch vehicle for over two decades, operated by JAXA and Mitsubishi Heavy Industries from the Tanegashima Space Centre. It launched a wide range of missions including lunar orbiters, asteroid sample-return probes, and Earth observation satellites. The rocket achieved an impressive 98% success rate across 47 launches. This photograph shows the payload fairing for the GPM Core Observatory, a joint NASA-JAXA mission to measure global rainfall.',
+    facts: [
+      'Japan\'s Tanegashima launch site is surrounded by fishing communities, so launches must be scheduled around fishing seasons to avoid conflict',
+      'H-IIA launched the Hayabusa2 asteroid probe, which collected samples from asteroid Ryugu and returned them to Earth in 2020',
+      'The payload fairing is so large it could fit a double-decker bus inside it',
+      'Japan is one of only a handful of countries to have developed its own independent orbital launch capability entirely domestically',
+      'H-IIA\'s successor, H3, had a troubled development but finally achieved success in 2024'
+    ]
+  }
+};
+
+// ── modal logic ────────────────────────────────────────────
+const backdrop = document.getElementById('backdrop');
+const modalImg = document.getElementById('modal-img');
+const modalTitle = document.getElementById('modal-title');
+const modalSub = document.getElementById('modal-subtitle');
+const modalDesc = document.getElementById('modal-desc');
+const modalFacts = document.getElementById('modal-facts');
+
+function openModal(index) {
+  const d = rockets[index];
+  if (!d) return;
+  modalImg.src = d.img;
+  modalImg.alt = d.title;
+  modalImg.style.setProperty('--modal-pos', d.pos);
+  modalTitle.textContent = d.title;
+  modalSub.textContent = d.sub;
+  modalDesc.textContent = d.desc;
+  modalFacts.innerHTML = d.facts.map(f => `<li>${f}</li>`).join('');
+  backdrop.classList.add('open');
+  document.getElementById('modal').scrollTop = 0;
+}
+
+function closeModal() {
+  backdrop.classList.remove('open');
+}
+
+document.getElementById('modal-close').addEventListener('click', closeModal);
+backdrop.addEventListener('click', e => { if (e.target === backdrop) closeModal(); });
+document.addEventListener('keydown', e => { if (e.key === 'Escape') closeModal(); });
+
+document.querySelectorAll('article').forEach(article => {
+  article.addEventListener('click', e => {
+    // Don't open if clicking a link inside the card
+    if (e.target.closest('a')) return;
+    const index = parseInt(article.style.getPropertyValue('--i'));
+    openModal(index);
+  });
+});
 </script>
 </body>
 </html>
